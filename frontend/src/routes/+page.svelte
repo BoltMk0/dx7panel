@@ -9,6 +9,7 @@
     import {browser} from "$app/environment"
     import Presets from "./Presets.svelte";
     import MyKnob from "../lib/MyKnob.svelte";
+    import ConnectionLed from "../lib/ConnectionLED.svelte";
 
     const model = getModel();
     const connection = getConnection();
@@ -259,6 +260,8 @@
 
 <Fullscreen let:onRequest>
     <div id="main-window-container">
+        <ConnectionLed/>
+
         {#if presets_visible}
             <Presets bind:visible={presets_visible}/>
         {/if}
@@ -266,7 +269,6 @@
             <div style="display: grid; grid-template-rows: auto 1fr; overflow-y: scroll;">
                 
                 <div class="section-header">
-                    <div class="connection-led" style="background-color:{CONNECTION_LED_COLORS[connection_status]}"/>
                     <div>Main</div>
                 </div>
                 <div id="left-col" class="osc-panel">

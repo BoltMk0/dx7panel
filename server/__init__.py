@@ -106,7 +106,7 @@ def get_voice_as_messages(voice: DX7Voice2=None):
     global current_voice
     if voice is None:
         voice = current_voice
-    return [[k, voice[k].value] for k in voice.keys()]
+    return [[k, voice[k].value] for k in voice.keys()] + [MessageIDs.SET_PRESET_NAME, voice.name.value]
 
 async def broadcast(msg):
     for c in connections.copy():
@@ -169,7 +169,9 @@ async def handle(websocket):
                 p = current_voice[msg[0]]
                 p.value = msg[1]
                 dx7.update_param(p)
-            if msg[0] == MessageIDs.SUBSCRIBE:
+            elif msg[0] == MessageIDs.SET_PRESET_NAME:
+                current_voice.name.value = msg[1]
+            elif msg[0] == MessageIDs.SUBSCRIBE:
                 if websocket not in connections:
                     connections.append(websocket)
             elif msg[0] == MessageIDs.VOICE_DUMP:

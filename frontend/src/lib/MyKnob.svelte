@@ -16,16 +16,13 @@
     $: knob_rotation = ROTATION_MIN + ROTATION_RANGE*(value-min)/valRange;
 
     let clicked = false;
-    let shortClickTimeout;
-    let shortClick = false;
 
     let valFloat;
+    let _touchmem;
 
     function onMouseDown(ev){
         valFloat = value;
         clicked = true;
-        shortClick = true;
-        shortClickTimeout = setTimeout(()=>{shortClick = false}, 200);
     }
 
     function onMouseMove(ev){
@@ -36,11 +33,27 @@
     }
 
     function onMouseUp(){
-        clearTimeout(shortClickTimeout);
         clicked = false;
-        if(shortClick){
-            // TODO: Edit
-        }
+    }
+
+
+    function onTouchDown(ev){
+        _touchmem = ev.changedTouches[0].pageY;
+        clicked = true;
+    }
+
+    function onTouchMove(ev){
+        if(clicked){
+            ev.stopPropagation();
+            const touch = ev.changedTouches[0].pageY;
+            const d = (_touchmem - touch)*max/size/4;
+            const new_value = Math.min(max, Math.max(0, valFloat + d));
+            if(!isNaN(new_value)){
+                valFloat = new_value;
+                value = Math.round(valFloat);
+            }
+            _touchmem = touch;
+        }   
     }
 
 </script>
@@ -96,9 +109,9 @@
     }
 </style>
 <div class='my-knob-main'>
-    <div class='my-knob-container' on:mousedown={onMouseDown} style="cursor: pointer; width: fit-content; height: fit-content;">
+    <div class='my-knob-container' on:mousedown={onMouseDown} on:touchstart={onTouchDown} style="cursor: pointer; width: fit-content; height: fit-content;">
         <div class="my-knob-img" style="width: {size}px; height: {size}px; transform: rotate({knob_rotation}deg)">
-            <div class="my-knob-line" style="width: {size/8}px; height: {size/8}px;"/>
+            <div class="my-knob-line" style="width: {size/6}px; height: {size/6}px;"/>
         </div>
         <div class='my-knob-label'>
             <ValueDisplay bind:value={value} min={min} max={max} integer/>
@@ -117,4 +130,5 @@
     <div style="text-align: center;">{label}</div>
     {/if}
 </div>
-<svelte:body on:mousemove={onMouseMove} on:mouseup={onMouseUp}/>
+<svelte:body on:mousemove={onMouseMove} on:mouseup={onMouseUp} />
+<svelte:window on:touchmove={onTouchMove} on:touchend={onMouseUp}/>

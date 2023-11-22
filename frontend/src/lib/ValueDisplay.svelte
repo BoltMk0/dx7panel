@@ -68,6 +68,6 @@
     }
 </style>
 <div class='value-display-main' style="width: {width}px;">
-    <input bind:this={inputEle} type="text" value="{value}" placeholder="{value}" on:change={apply} style="display: {editMode ? 'block' : 'none'};" on:focusout={()=>{editMode=false;}}/>
+    <input type="number" bind:this={inputEle} value="{value}" placeholder="{value}" on:change={apply} style="display: {editMode ? 'block' : 'none'};" on:focusout={()=>{editMode=false;}}/>
     <div on:mousedown={onMouseDown} on:mouseup={onMouseUp} style="display: {editMode ? 'none' : 'block'};">{value}</div>
 </div>

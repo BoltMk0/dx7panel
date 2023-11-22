@@ -11,6 +11,7 @@ function send_message(mid, val) {
     if (msg_enable) {
         getConnection().send(JSON.stringify([mid, val]));
     }
+    
 }
 
 

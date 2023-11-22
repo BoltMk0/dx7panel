@@ -3,8 +3,9 @@
     export let vertical=false;
     export let thumbsize=20;
     export let bgwidth=3;
-    export let max=100;
+    export let max=99;
     export let value;
+
 
     const d_multiplier = max/size;
 
@@ -24,9 +25,8 @@
     }
     function onMouseMove(ev){
         if(_moving){
-            const d = (vertical ? -ev.movementY : ev.mouvementX)*d_multiplier;
-
-            const new_value = Math.min(100, Math.max(0, _value + d));
+            const d = (vertical ? -ev.movementY : ev.movementX)*d_multiplier;
+            const new_value = Math.min(max, Math.max(0, _value + d));
             if(!isNaN(new_value)) _value = new_value;
         }   
     }
