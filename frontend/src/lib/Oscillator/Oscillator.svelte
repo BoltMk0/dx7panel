@@ -98,7 +98,9 @@
     #main{
         padding: 10px;
         border-radius: 10px;
-        min-width: 30%;
+        /* min-width: 30%; */
+        width: fit-content;
+        height: fit-content
     }
 
     #col-container{

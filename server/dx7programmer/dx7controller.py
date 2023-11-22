@@ -151,11 +151,7 @@ class DX7Controller:
         self._passthrough_midi_input = rtmidi.MidiIn()
         self._midi_input.ignore_types(sysex=False)
 
-        out_device_id = midi.get_default_output_id()
-        if out_device_id > -1:
-            self._midi_output = midi.Output(midi.get_default_output_id())
-        else:
-            self._midi_output = None
+        self._midi_output = None
 
         self.on_error = Signal()
         self.on_param_change = Signal()
@@ -176,6 +172,7 @@ class DX7Controller:
             self.set_device_out(self._config.dx7_device_out)
         except:
             print(f'[ER] Unable to set device out ({self._config.dx7_device_out})')
+            raise
             self._config.dx7_device_out = None
             self.set_device_out(None)
 
@@ -201,6 +198,8 @@ class DX7Controller:
                 if info[2] > 0 and input:
                     return i
                 elif info[3] > 0:
+                    if info[4] > 0:
+                        print('[WN] Device is opened - may cause issues')
                     return i
         raise ValueError(name)
 
@@ -233,17 +232,18 @@ class DX7Controller:
         self._config.save()
 
     def set_device_out(self, device: str):
-        if self._midi_output is not None:
-            self._midi_output.close()
-            self._midi_output = None
         self._config.dx7_device_out = device if device in self.get_outports() else None
         if self._config.dx7_device_out is not None:
             try:
                 deviceid = self._device_name_to_id(self._config.dx7_device_out, False)
-                self._midi_output = midi.Output(deviceid)
+                if self._midi_output is not None:
+                    if self._midi_output.device_id != deviceid:
+                        self._midi_output.close()
+                        self._midi_output = midi.Output(deviceid)
+                else:
+                    self._midi_output = midi.Output(deviceid)
                 print(f'Opened MIDI output: {self._config.dx7_device_out}')
             except:
-                print(self._config.dx7_device_out, self._device_name_to_id(self._config.dx7_device_out, False))
                 raise
 
         self._config.save()
@@ -311,6 +311,9 @@ class DX7Controller:
                 if midi_type == MIDI_TYPE.KEY_ON:
                     midi_data[2] = round(100*midi_data[2]/127)
             if len(midi_data) == 3:
+                print(midi_data)
+                print(midi.get_device_info(self._midi_output.device_id))
+                self._midi_output.note_on(70, 50, 0)
                 self._midi_output.write_short(*midi_data)
 
     def get_velocity_correction(self):

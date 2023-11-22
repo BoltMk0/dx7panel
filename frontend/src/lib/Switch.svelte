@@ -49,8 +49,8 @@
     }
   
     .color_on > * {
-      background-color: #2196f3;
-      box-shadow: 0 0 1px #2196f3;
+      background-color: #0f8465;
+      box-shadow: 0 0 1px #0f8465;
     }
   
     input:checked + .slider:before {

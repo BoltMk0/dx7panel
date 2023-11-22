@@ -1,6 +1,7 @@
 <script>
     import Slider from "$lib/Slider.svelte";
     import Knob from "svelte-knob";
+    import MyKnob from "../../MyKnob.svelte";
     export let ldepth;
     export let rdepth;
     export let breakpoint;
@@ -33,12 +34,19 @@
         display: grid;
         align-items: center;
     }
+
+    select{
+        background-color: #333;
+        color: white;
+        padding: 2px;
+    }
 </style>
 
 <div class="osc-section" id="main">
     <div class="row">
         <div>
-            <Knob bind:value={ldepth} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
+            <!-- <Knob bind:value={ldepth} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
+            <MyKnob bind:value={ldepth} size={KNOB_SIZE}/>
             <div>L Depth</div>
         </div>
         <div>
@@ -46,7 +54,9 @@
             <Slider bind:value={breakpoint}/>
         </div>
         <div>
-            <Knob bind:value={rdepth} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
+            <!-- <Knob bind:value={rdepth} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
+            <MyKnob bind:value={rdepth} size={KNOB_SIZE}/>
+
             <div>R Depth</div>
         </div>
     </div>
@@ -61,7 +71,9 @@
             <div>L Curve</div>
         </div>
         <div>
-            <Knob bind:value={ratescaling} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} max={7} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
+            <!-- <Knob bind:value={ratescaling} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} max={7} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
+            <MyKnob bind:value={ratescaling} size={KNOB_SIZE} max={7}/>
+
             <div style="text-align: center;">Rate<br/>Scaling</div>
         </div>
         <div>

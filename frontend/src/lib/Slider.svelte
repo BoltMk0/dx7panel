@@ -57,7 +57,7 @@
     .slider-thumb{
         position: absolute;
         border-radius: 50%;
-        background-color: rgb(15, 132, 101);
+        background-color: #0f8465;
     }
     .draggable{
         user-select: none;

@@ -9,10 +9,10 @@
     export let r3;
     export let r4;
 
-    import Knob from "svelte-knob";
     import Slider from "$lib/Slider.svelte";
     import {OSC_PARAM} from "$lib/const.js";
     import * as util from "$lib/util.js";
+    import MyKnob from "../../MyKnob.svelte";
     
     const KNOB_SIZE = "40";
     const KNOB_COLOR_PRIMARY = "#55A";
@@ -25,7 +25,8 @@
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         text-align: center;
-        gap: 5px;
+        justify-items: center;
+        gap: 8px 3px;
     }
 
     .sectionLabel{
@@ -46,10 +47,14 @@
         <div>2</div>
         <div>3</div>
         <div>4</div>
-        <Knob bind:value={r1} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH} max={util.get_param_max(OSC_PARAM.RATE_1)}/>
+        <!-- <Knob bind:value={r1} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH} max={util.get_param_max(OSC_PARAM.RATE_1)}/>
         <Knob bind:value={r2} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH} max={util.get_param_max(OSC_PARAM.RATE_2)}/>
         <Knob bind:value={r3} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH} max={util.get_param_max(OSC_PARAM.RATE_3)}/>
-        <Knob bind:value={r4} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH} max={util.get_param_max(OSC_PARAM.RATE_4)}/>
+        <Knob bind:value={r4} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH} max={util.get_param_max(OSC_PARAM.RATE_4)}/> -->
+        <MyKnob bind:value={r1} size={KNOB_SIZE}/>
+        <MyKnob bind:value={r2} size={KNOB_SIZE}/>
+        <MyKnob bind:value={r3} size={KNOB_SIZE}/>
+        <MyKnob bind:value={r4} size={KNOB_SIZE}/>
         <div class="sectionLabel">{name} Rate</div>
     </div>
 </div>

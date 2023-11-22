@@ -8,6 +8,7 @@
     import {onDestroy} from "svelte";
     import {browser} from "$app/environment"
     import Presets from "./Presets.svelte";
+    import MyKnob from "../lib/MyKnob.svelte";
 
     const model = getModel();
     const connection = getConnection();
@@ -129,6 +130,7 @@
 
     :global(body){
         margin: 0;
+        user-select: none;
     }
 
     :global(.osc-panel) {
@@ -147,7 +149,7 @@
     #main-window{
         width: 100%;
         display: grid;
-        grid-template-columns: 320px auto;
+        grid-template-columns: 320px 1fr;
         gap: 5px;
     }
 
@@ -175,8 +177,8 @@
         /* display: grid;
         grid-template-columns: 1fr 1fr; */
         gap:3px;
-        overflow-y: scroll;
-        height: 100%;
+        justify-content: center;
+        align-items: center;
     }
 
     #fullscreen-btn{
@@ -188,11 +190,11 @@
         font-size: larger;
         text-align: center;
         opacity: 0.6;
+        height: fit-content;
     }
 
     #left-col{
         padding: 10px;
-        overflow-y: scroll;
     }
     #left-col > *{
         margin-bottom:10px;
@@ -261,105 +263,118 @@
             <Presets bind:visible={presets_visible}/>
         {/if}
         <div id="main-window">
-            <div class="section-header">
-                <div class="connection-led" style="background-color:{CONNECTION_LED_COLORS[connection_status]}"/>
-                <div>Main</div>
-            </div>
-            <div class="section-header">OSCs</div>
-            <!-- <div class="section-header">Thing</div> -->
-            <div id="left-col" class="osc-panel">
-                {#if !_fullscreen}
-                <button id="fullscreen-btn" on:click={()=>{onRequest(); _fullscreen=true}}>Fullscreen</button>
-                {/if}
-                <button id="voice-btn" on:click={()=>{presets_visible=true;}}>{preset_btn_title}</button>
-                <div class="osc-section" id="master-controls">
-                    <div class="row">
-                        <div>
-                            <Knob bind:value={tune_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
-                            <div>Tune</div>
+            <div style="display: grid; grid-template-rows: auto 1fr; overflow-y: scroll;">
+                
+                <div class="section-header">
+                    <div class="connection-led" style="background-color:{CONNECTION_LED_COLORS[connection_status]}"/>
+                    <div>Main</div>
+                </div>
+                <div id="left-col" class="osc-panel">
+                    {#if !_fullscreen}
+                    <button id="fullscreen-btn" on:click={()=>{onRequest(); _fullscreen=true}}>Fullscreen</button>
+                    {/if}
+                    <button id="voice-btn" on:click={()=>{presets_visible=true;}}>{preset_btn_title}</button>
+                    <div class="osc-section" id="master-controls">
+                        <div class="row">
+                            <div>
+                                <!-- <Knob bind:value={tune_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
+                                <MyKnob bind:value={tune_val} size={KNOB_SIZE} />
+                                <div>Tune</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="osc-section">
-                    <Eg 
-                    bind:l1={pl1_val} 
-                    bind:l2={pl2_val} 
-                    bind:l3={pl3_val} 
-                    bind:l4={pl4_val} 
-                    bind:r1={pr1_val} 
-                    bind:r2={pr2_val} 
-                    bind:r3={pr3_val} 
-                    bind:r4={pr4_val} 
-                    name="Pitch EG"/>
-                </div>
-                <div class="osc-section" id="algorithm-section">
-                    <div style="display: grid; grid-template-columns: auto fit-content(100px);">
-                        <div>
-                            <img class='algo-display' src="/algorithms/alg{selected_algorithm+1}.png"/>
-                        </div>
-                        <div class="osc-section" id='algo-select'>
+                    <div class="osc-section">
+                        <Eg 
+                        bind:l1={pl1_val} 
+                        bind:l2={pl2_val} 
+                        bind:l3={pl3_val} 
+                        bind:l4={pl4_val} 
+                        bind:r1={pr1_val} 
+                        bind:r2={pr2_val} 
+                        bind:r3={pr3_val} 
+                        bind:r4={pr4_val} 
+                        name="Pitch EG"/>
+                    </div>
+                    <div class="osc-section" id="algorithm-section">
+                        <div style="display: grid; grid-template-columns: auto fit-content(100px);">
                             <div>
-                                <div>Algorithm</div>
-                                <div style="display: flex">
-                                    <button on:click={()=>{set_algorithm(selected_algorithm-1)}}>-</button>
-                                    <select on:change={(ev)=>{set_algorithm(parseInt(ev.target.value)-1)}}>
-                                        {#each {length: 32} as _, i}
-                                            <option selected={selected_algorithm==i}>{i+1}</option>
-                                        {/each}
-                                    </select>
-                                    <button on:click={()=>{set_algorithm(selected_algorithm+1)}}>+</button>
+                                <img class='algo-display' src="/algorithms/alg{selected_algorithm+1}.png"/>
+                            </div>
+                            <div class="osc-section" id='algo-select'>
+                                <div>
+                                    <div>Algorithm</div>
+                                    <div style="display: flex">
+                                        <button on:click={()=>{set_algorithm(selected_algorithm-1)}}>-</button>
+                                        <select on:change={(ev)=>{set_algorithm(parseInt(ev.target.value)-1)}}>
+                                            {#each {length: 32} as _, i}
+                                                <option selected={selected_algorithm==i}>{i+1}</option>
+                                            {/each}
+                                        </select>
+                                        <button on:click={()=>{set_algorithm(selected_algorithm+1)}}>+</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div>Feedback</div>
+                                    <Knob size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
                                 </div>
                             </div>
+                        </div>
+                        
+                    </div>
+                    <div class="osc-section" id="lfo">
+                        <div style="width: 100%; text-align: center;">LFO</div>
+                        <div class="row">
                             <div>
-                                <div>Feedback</div>
-                                <Knob size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
+                                <div>Waveform</div>
+                                <select on:change={(ev)=>{set_waveform(parseInt(ev.target.value))}}>
+                                    {#each WAVEFORMS as name, i}
+                                    <option value={i}>{name}</option>
+                                    {/each}
+                                </select>
+                            </div>
+                            <div>
+                                <!-- <Knob bind:value={lfo_pmod_sens_val} max={7} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
+                                <MyKnob bind:value={lfo_pmod_sens_val} max={7} size={KNOB_SIZE}/>
+                                <div>Pitch Sens</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div>
+                                <!-- <Knob bind:value={lfo_rate_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
+                                <MyKnob bind:value={lfo_rate_val} size={KNOB_SIZE}/>
+                                <div>Rate</div>
+                            </div>
+                            <div>
+                                <!-- <Knob bind:value={lfo_delay_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
+                                <MyKnob bind:value={lfo_delay_val} size={KNOB_SIZE}/>
+                                <div>Delay</div>
+                            </div>
+                            <div>
+                                <!-- <Knob bind:value={lfo_pmod_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
+                                <MyKnob bind:value={lfo_pmod_val} size={KNOB_SIZE}/>
+                                <div>Pitch</div>
+                            </div>
+                            <div>
+                                <!-- <Knob bind:value={lfo_amod_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
+                                <MyKnob bind:value={lfo_amod_val} size={KNOB_SIZE}/>
+                                <div>Amp</div>
                             </div>
                         </div>
                     </div>
-                    
                 </div>
-                <div class="osc-section" id="lfo">
-                    <div style="width: 100%; text-align: center;">LFO</div>
-                    <div class="row">
-                        <div>
-                            <div>Waveform</div>
-                            <select on:change={(ev)=>{set_waveform(parseInt(ev.target.value))}}>
-                                {#each WAVEFORMS as name, i}
-                                <option value={i}>{name}</option>
-                                {/each}
-                            </select>
-                        </div>
-                        <div>
-                            <Knob bind:value={lfo_pmod_sens_val} max={7} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
-                            <div>Pitch Sens</div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div>
-                            <Knob bind:value={lfo_rate_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
-                            <div>Rate</div>
-                        </div>
-                        <div>
-                            <Knob bind:value={lfo_delay_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
-                            <div>Delay</div>
-                        </div>
-                        <div>
-                            <Knob bind:value={lfo_pmod_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
-                            <div>Pitch</div>
-                        </div>
-                        <div>
-                            <Knob bind:value={lfo_amod_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
-                            <div>Amp</div>
-                        </div>
+            </div>
+            <div style="display: grid; grid-template-rows: auto 1fr; overflow-y: scroll; ">
+                <div class="section-header">OSCs</div>
+                <div style="display: flex; align-items: center; padding: 20px;">
+                    <div id="osc-container">
+                        {#each {length: 6} as _, i}
+                            <Oscillator idx={i}/>
+                        {/each}
                     </div>
                 </div>
             </div>
-            <div id="osc-container">
-                {#each {length: 6} as _, i}
-                    <Oscillator idx={i}/>
-                {/each}
-            </div>
+            
         </div>
     </div>
 </Fullscreen>

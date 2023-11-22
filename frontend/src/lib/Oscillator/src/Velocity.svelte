@@ -4,6 +4,7 @@
     export let level;
 
     import Knob from "svelte-knob";
+    import MyKnob from "../../MyKnob.svelte";
 
     const KNOB_SIZE = "50";
     const KNOB_COLOR_PRIMARY = "#55A";
@@ -27,7 +28,10 @@
     <div>A Mod Sens</div>
     <div>Key Vel</div>
     <div>Level</div>
-    <Knob bind:value={amodsens} size={KNOB_SIZE} max={3} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
+    <!-- <Knob bind:value={amodsens} size={KNOB_SIZE} max={3} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
     <Knob bind:value={keyvel} max={7} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
-    <Knob bind:value={level} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/>
+    <Knob bind:value={level} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
+    <MyKnob bind:value={amodsens} size={KNOB_SIZE} max={3}/>
+    <MyKnob bind:value={keyvel} max={7} size={KNOB_SIZE}/>
+    <MyKnob bind:value={level} size={KNOB_SIZE} max={99}/>
 </div>
