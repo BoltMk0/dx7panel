@@ -10,24 +10,15 @@
     import Presets from "./Presets.svelte";
     import MyKnob from "../lib/MyKnob.svelte";
     import ConnectionLed from "../lib/ConnectionLED.svelte";
+    import BankView from "./BankView.svelte";
+    import {MESSAGE_ID} from "$lib/const.js";
 
     const model = getModel();
     const connection = getConnection();
     const unsubscribes = [];
 
-    const CONNECTION_LED_COLORS = ['red', 'yellow', 'green'];
-    
-    let connection_status;
-
     if(browser){
         connection.connect();
-        unsubscribes.push(connection.connected.subscribe((val)=>{
-            connection_status = val;
-        }));
-        unsubscribes.push(model.cur_preset.subscribe((val)=>{
-            if(val)
-                preset_btn_title = val.join('/');
-        }))
     }
 
     let _fullscreen = false;
@@ -41,8 +32,6 @@
     const KNOB_STROKE_WIDTH = "20";
 
     let tune_val;
-    let cutoff_val;
-    let resonance_val;
 
     let pl1_val;
     let pl2_val;
@@ -68,7 +57,10 @@
 
     let osc_sync_val;
 
+    let voice_name;
 
+
+    unsubscribes.push(model.voice_name.subscribe((val)=>{voice_name=val;}));
     unsubscribes.push(model.pitch_level1.subscribe((val)=>{pl1_val=val;}));
     unsubscribes.push(model.pitch_level2.subscribe((val)=>{pl2_val=val;}));
     unsubscribes.push(model.pitch_level3.subscribe((val)=>{pl3_val=val;}));
@@ -89,6 +81,7 @@
     unsubscribes.push(model.mod_sens_pitch.subscribe((val)=>{lfo_pmod_sens_val=val;}));
     unsubscribes.push(model.transpose.subscribe((val)=>{tune_val=val;}));
 
+    $: model.voice_name.set(voice_name);
     $: model.pitch_level1.set(pl1_val);
     $: model.pitch_level2.set(pl2_val);
     $: model.pitch_level3.set(pl3_val);
@@ -122,6 +115,11 @@
     onDestroy(()=>{
         for(let u in unsubscribes) unsubscribes[u]();
     });
+
+
+    function setVoiceName(newName){
+        connection.send([MESSAGE_ID.VOICE_NAME, newName]);
+    }
 
 </script>
 <style>
@@ -255,7 +253,11 @@
         color: #CCC;
         text-align: left;
     }
-
+    .voice-name-input{
+        background-color: #444;
+        color: white;
+        padding-left: 10px;
+    }
 </style>
 
 <Fullscreen let:onRequest>
@@ -268,20 +270,20 @@
         <div id="main-window">
             <div style="display: grid; grid-template-rows: auto 1fr; overflow-y: scroll;">
                 
-                <div class="section-header">
-                    <div>Main</div>
-                </div>
                 <div id="left-col" class="osc-panel">
                     {#if !_fullscreen}
                     <button id="fullscreen-btn" on:click={()=>{onRequest(); _fullscreen=true}}>Fullscreen</button>
                     {/if}
-                    <button id="voice-btn" on:click={()=>{presets_visible=true;}}>{preset_btn_title}</button>
                     <div class="osc-section" id="master-controls">
                         <div class="row">
                             <div>
                                 <!-- <Knob bind:value={tune_val} size={KNOB_SIZE} primaryColor={KNOB_COLOR_PRIMARY} secondaryColor={KNOB_COLOR_SECONDARY} textColor={KNOB_COLOR_TEXT} strokeWidth={KNOB_STROKE_WIDTH}/> -->
                                 <MyKnob bind:value={tune_val} size={KNOB_SIZE} />
                                 <div>Tune</div>
+                            </div>
+                            <div>
+                                <div>Voice Name</div>
+                                <input class='voice-name-input' on:change={(ev)=>{setVoiceName(ev.target.value);}} value="{voice_name}"/>
                             </div>
                         </div>
                     </div>
@@ -366,13 +368,18 @@
                     </div>
                 </div>
             </div>
-            <div style="display: grid; grid-template-rows: auto 1fr; overflow-y: scroll; ">
-                <div class="section-header">OSCs</div>
-                <div style="display: flex; align-items: center; padding: 20px;">
-                    <div id="osc-container">
-                        {#each {length: 6} as _, i}
-                            <Oscillator idx={i}/>
-                        {/each}
+            <div style="overflow: hidden; display: grid;">
+                <div class='bank-view-container'>
+                    <BankView on:showpresets={()=>{presets_visible = true;}}/>
+                </div>
+                <div style="display: grid; grid-template-rows: auto 1fr; overflow-y: scroll; ">
+                    <div class="section-header">OSCs</div>
+                    <div style="display: grid; align-items: center; padding: 20px;">
+                        <div id="osc-container">
+                            {#each {length: 6} as _, i}
+                                <Oscillator idx={i}/>
+                            {/each}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,1 +1,1 @@
-{"device_in": "Nord Stage 3 MIDI Output", "device_out": "Nord Stage 3 MIDI Input", "channel": 1, "passthrough_device_in": "Scarlett 18i20 USB", "correct_midi_vel": true}
+{"device_in": null, "device_out": null, "channel": 1, "passthrough_device_in": null, "correct_midi_vel": true}

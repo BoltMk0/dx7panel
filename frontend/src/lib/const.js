@@ -48,19 +48,18 @@ const VOICE_PARAM = {
 const MESSAGE_ID = {
     SUBSCRIBE: 200,
     VOICE_DUMP: 201,
-    SET_NAME: 202,
+    BANK_DUMP: 202,
+    VOICE_LOAD: 203,        // {category, bankIndex, voiceIndex}
+    BANK_UPLOAD: 204,       // {category, bankIndex}
 
-    PRESET_DUMP: 210,
-    LOAD_VOICE: 211, // (category, groupname, presetname)
-    SET_PRESET_NAME: 212, // (groupname, presetname)
-    NEW_PRESET: 213, // (groupname)
-    NEW_GROUP: 214, // (groupname)
-    DELETE_GROUP: 215, // (groupname)
-    DELETE_PRESET: 216, // (groupname, presetname)
-    SAVE_PRESET: 217, // (groupname, presetname(optional))
+    NEW_USER_BANK: 210,     // {bankName}
+    DELETE_USER_BANK: 211,  // {bankIndex}
+    VOICE_INIT: 220,
+    VOICE_NAME: 221,        // {voiceName}
+    VOICE_STORE: 222,       // {voiceIndex}
 
     GET_SETTINGS: 230,
-    SET_SETTINGS: 231,
-}
+    SET_SETTINGS: 231
+};
 
 export { OSC_PARAM, VOICE_PARAM, MESSAGE_ID };

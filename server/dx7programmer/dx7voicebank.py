@@ -376,6 +376,9 @@ class NameParam(ParameterGroupBase):
             name = ''
 
         self.value = name
+    
+    def toParameterValues(self):
+        return [self.c0, self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7, self.c8, self.c9]
 
     def update(self, data: List[VoiceParameterValue], throw_errors=False):
         map = self.val_map()

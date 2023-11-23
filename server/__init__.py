@@ -13,22 +13,7 @@ from .dx7programmer import DX7Controller, DX7Voice, VoiceParameterValue
 
 VERSION = "1.0-beta"
 
-class MessageIDs:
-    SUBSCRIBE = 200
-    VOICE_DUMP = 201
-    SET_NAME = 202
-
-    PRESET_DUMP = 210
-    LOAD_VOICE = 211
-    SET_PRESET_NAME = 212
-    NEW_PRESET = 213
-    NEW_GROUP = 214
-    DELETE_GROUP = 215
-    DELETE_PRESET = 216
-    SAVE_PRESET = 217
-
-    GET_SETTINGS = 230
-    SET_SETTINGS = 231
+from .message import *
 
 
 VOICES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dx7programmer', 'voices')
@@ -36,10 +21,154 @@ VOICES_PRESETS_DIR = os.path.join(VOICES_DIR, 'preset')
 VOICES_USER_DIR = os.path.join(VOICES_DIR, 'user')
 
 
+class CategoryManager:
+    def __init__(self, name: str) -> None:
+        self._name = name
+        assert os.path.exists(self.dirpath())
+    @property
+    def name(self):
+        return self._name
+    
+    def dirpath(self):
+        return os.path.join(VOICES_DIR, self._name)
+    
+    def __getitem__(self, v: int):
+        return BankManager.fromDir(os.path.join(self.dirpath(), self.listBankDirs(self.dirpath())[v]))
+
+    def __len__(self):
+        return len(self.listBankDirs(self.dirpath()))
+    
+    def initBank(self, bankName: str):
+        bankDirname = f'{len(self):02}_{bankName}'
+        bankDirpath = os.path.join(VOICES_DIR, self.name, bankDirname)
+        assert not os.path.exists(bankDirpath)
+
+        os.mkdir(bankDirpath)
+        for i in range(32):
+            name = f'{bankName[:7]:7s} {i:02}'
+            vpath = os.path.join(bankDirpath, f'{i:02}_{name.replace(" ", "_")}.syx')
+            DX7Voice2(name).save(vpath)
+
+        return BankManager.fromDir(bankDirpath)
+    
+    @staticmethod
+    def listBankDirs(dirpath):
+        to_ret = [i for i in os.listdir(dirpath) if BankManager.IsBankDir(os.path.join(dirpath, i))]
+        to_ret.sort()
+        return to_ret
+
+class BankManager:
+    def __init__(self, category: str, index: int, name: str):
+        self._category = category
+        self._index = index
+        self._name = name
+        assert os.path.exists(self.dirpath()), f'Bank dir not found: {self.dirpath()}'
+
+    @property
+    def category(self):
+        return self._category
+    
+    @property
+    def index(self) -> int:
+        return self._index
+    
+    @property
+    def name(self):
+        return self._name
+    
+    def dirpath(self):
+        return os.path.join(VOICES_DIR, self.category, self.name)
+
+    @staticmethod
+    def listVoiceFiles(dirpath):
+        to_ret = [i for i in os.listdir(dirpath) if VoiceManager.IsVoiceFile(os.path.join(dirpath, i))]
+        to_ret.sort()
+        return to_ret
+    
+    def voices(self):
+        return [VoiceManager.fromFile(os.path.join(self.dirpath(), f)) for f in self.listVoiceFiles(self.dirpath())]
+    
+    def __getitem__(self, v: int):
+        return VoiceManager.fromFile(os.path.join(self.dirpath(), self.listVoiceFiles(self.dirpath())[v]))
+
+    def __len__(self):
+        return len(self.listVoiceFiles(self.dirpath()))
+    
+    @classmethod
+    def fromDir(cls, dirpath: str):
+        catDirpath = os.path.dirname(dirpath)
+        category = os.path.basename(catDirpath)
+        bankName = os.path.basename(dirpath)
+        i = CategoryManager.listBankDirs(catDirpath).index(bankName)
+        return cls(category, i, bankName)
+    
+    @staticmethod
+    def IsBankDir(dirpath: str):
+        if not os.path.isdir(dirpath): return False
+
+        return True
+    
+    def delete(self):
+        shutil.rmtree(self.dirpath())
+
+
+
+class VoiceManager:
+    def __init__(self, category: str, bank: int, index: int) -> None:
+        self._category = category
+        self._bank = bank
+        self._index = index
+
+    @property
+    def category(self):
+        return self._category
+    
+    @property
+    def bankIndex(self):
+        return self._bank
+    
+    @property
+    def index(self):
+        return self._index
+    
+    def name(self):
+        return self.voice().name.value
+    
+    def bank(self):
+        return CategoryManager(self.category)[self.bankIndex]
+    
+    def filepath(self):
+        b = self.bank()
+        return os.path.join(b.dirpath(), BankManager.listVoiceFiles(b.dirpath())[self.index])
+
+    def voice(self):
+        return DX7Voice2.from_file(self.filepath())
+
+    @classmethod
+    def fromFile(cls, filepath: str):
+        assert filepath.startswith(VOICES_DIR)
+        relpath = filepath[len(VOICES_DIR):]
+        relpath = relpath.lstrip(os.path.sep)
+        assert len(relpath.split('/')) == 3, f'unexpected voice filepath: {relpath}'
+        cat, bd, vf = relpath.split('/', 3)
+        bi = CategoryManager.listBankDirs(os.path.join(VOICES_DIR, cat)).index(bd)
+        vi, vname = vf.split('_', 1)
+        vi = int(vi)
+
+        return cls(cat, bi, vi)
+
+    @staticmethod
+    def IsVoiceFile(filepath: str):
+        if not os.path.isfile(filepath): return False
+        if not filepath.endswith('.syx'): return False
+        return True
+    
+
 class DX7Voice2(DX7Voice):
     def __init__(self, name=None):
         super().__init__(name)
         self._param_map = None
+        self.index = None
     
     def param_map(self) -> Dict[int, VoiceParameterValue]:
         if self._param_map is None:
@@ -101,12 +230,26 @@ class DX7Voice2(DX7Voice):
     def __getitem__(self, k: int):
         return self.param_map()[k]
     
+    def filename(self):
+        return f'{self.index:02}_{self.name.value[:10].replace(" ", "_")}.syx'
+
+    @classmethod
+    def from_file(cls, filepath):
+        i = os.path.basename(filepath).split('_')[0]
+        i = int(i)
+        with open(filepath, 'rb') as fp:
+            to_ret = cls.from_sysex(fp.read())
+        to_ret.index = i
+        return to_ret
 
 def get_voice_as_messages(voice: DX7Voice2=None):
     global current_voice
     if voice is None:
         voice = current_voice
-    return [[k, voice[k].value] for k in voice.keys()] + [MessageIDs.SET_PRESET_NAME, voice.name.value]
+
+    vfp = voice.filename()
+    print(vfp)
+    return [[k, voice[k].value] for k in voice.keys()] + [[MessageIDs.VOICE_NAME, voice.name.value],]
 
 async def broadcast(msg):
     for c in connections.copy():
@@ -115,47 +258,46 @@ async def broadcast(msg):
         except ConnectionClosed:
             connections.remove(c)
 
-def _list_groups(basedir):
-    return [i for i in os.listdir(basedir) if os.path.isdir(os.path.join(basedir, i))]
+async def handle_voice_init():
+    global current_voice
+    current_voice = DX7Voice2(current_voice.name.value)
+    await broadcast(json.dumps(get_voice_as_messages(current_voice)))
 
-def list_user_groups():
-    return _list_groups(VOICES_USER_DIR)
-
-def list_preset_groups():
-    return _list_groups(VOICES_PRESETS_DIR)
-
-def list_voices(groupname: str):
-    if groupname in list_user_groups():
-        return [i for i in os.listdir(os.path.join(VOICES_USER_DIR, groupname)) if i.endswith('.syx')]
-    elif groupname in list_preset_groups():
-        return [i for i in os.listdir(os.path.join(VOICES_PRESETS_DIR, groupname)) if i.endswith('.syx')] 
-
-async def load_voice(category: str, groupname: str, filename: str):
+async def handle_voice_load_messge(msg: VoiceLoadMessage):
     global current_voice, current_voice_path
-    vpath = os.path.join(VOICES_DIR, category, groupname, filename)
-    if(os.path.exists(vpath)):
-        current_voice = DX7Voice2.from_file(vpath)
-        current_voice_path = [category, groupname, filename]
+    try:
+        vm = CategoryManager(msg.category())[msg.bankIndex()][msg.voiceIndex()]
+        current_voice = vm.voice()
+        current_voice_path = [msg.category(), msg.bankIndex(), msg.voiceIndex()]
+
+        print(f'Loaded voice: {vm.filepath()}')
         dx7.update_voice(current_voice)
-        await broadcast(json.dumps(get_voice_as_messages()))
-        await broadcast(json.dumps([MessageIDs.LOAD_VOICE, current_voice_path]))
-    else:
-        print('[ER] Voice not found')
+        await broadcast(json.dumps(get_voice_as_messages(current_voice)))
+        await broadcast(json.dumps(msg))
+    except ValueError as e:
+        print(f'[ER] {e}')
+        
+async def handle_voice_store_messge(msg: VoiceStoreMessage):
+    old_filepath = CategoryManager(msg.category())[msg.bankIndex()][msg.voiceIndex()].filepath()
+    new_filepath = os.path.join(os.path.dirname(fp), f'{msg.bankIndex():02}_{current_voice.name.value.replace(" ", "_")}.syx')
+    if old_filepath != new_filepath:
+        os.remove(old_filepath)
+    current_voice.save(new_filepath)
 
 def dump_presets():
+    pm = CategoryManager('preset')
+    um = CategoryManager('user')
     return {
-        'preset': {g: list_voices(g) for g in list_preset_groups()},
-        'user': {g: list_voices(g) for g in list_user_groups()}
+        'preset': [{"name": pm[i].name, 'voices': [v.name() for v in pm[i].voices()]} for i in range(len(pm))],
+        'user': [{'name': um[i].name, 'voices': [v.name() for v in um[i].voices()]} for i in range(len(um))]
     }  
 
 connections = []
 dx7 = DX7Controller()
 dx7.set_passthrough_device_in
 
-current_voice_path = []
-current_voice = DX7Voice2()
-
-asyncio.run(load_voice('preset', list_preset_groups()[0], (list_voices(list_preset_groups()[0])[0])))
+current_voice_path = ['preset', 0, 0]
+current_voice = CategoryManager('preset')[0][0].voice()
 
 
 async def handle(websocket):
@@ -165,18 +307,20 @@ async def handle(websocket):
         if not isinstance(msgs[0], list):
             msgs = [msgs]
         for msg in msgs:
-            if msg[0] < 156:
+            msgId = Message.getId(msg)
+            if msgId < 156:
                 p = current_voice[msg[0]]
                 p.value = msg[1]
                 dx7.update_param(p)
-            elif msg[0] == MessageIDs.SET_PRESET_NAME:
-                current_voice.name.value = msg[1]
-            elif msg[0] == MessageIDs.SUBSCRIBE:
+            elif msgId == SubscribeMessage.id():
                 if websocket not in connections:
                     connections.append(websocket)
-            elif msg[0] == MessageIDs.VOICE_DUMP:
-                await websocket.send(json.dumps(get_voice_as_messages()))
-            elif msg[0] == MessageIDs.GET_SETTINGS:
+            elif msgId == MessageIDs.VOICE_DUMP:
+                await websocket.send(json.dumps(get_voice_as_messages(current_voice)))
+                await websocket.send(json.dumps([MessageIDs.VOICE_LOAD, current_voice_path]))
+            elif msgId == MessageIDs.BANK_DUMP:
+                await websocket.send(json.dumps([MessageIDs.BANK_DUMP, dump_presets()]))
+            elif msgId == GetSettingsMessage.id():
                 # Get settings
                 await websocket.send(json.dumps([MessageIDs.SET_SETTINGS, {
                     'midi_in': {
@@ -193,7 +337,8 @@ async def handle(websocket):
                     },
                     'vel_correction':  dx7.get_velocity_correction()
                 }]))
-            elif msg[0] == MessageIDs.SET_SETTINGS:
+            elif msgId == SetSettingsMessage.id():
+                msg = SetSettingsMessage(msg)
                 # Set settings
                 print(f"Updating settings: {msg[1]}")
                 if 'midi_out' in msg[1]:
@@ -204,17 +349,33 @@ async def handle(websocket):
                     dx7.set_passthrough_device_in(msg[1]['midi_thru']['value'])
                 if 'vel_correction' in msg[1]:
                     dx7.set_velocity_correction(msg[1]['vel_correction'])
-            elif msg[0] == MessageIDs.PRESET_DUMP:
-                await websocket.send(json.dumps([MessageIDs.PRESET_DUMP, dump_presets()]))
-                await websocket.send(json.dumps([MessageIDs.LOAD_VOICE, current_voice_path]))
-            elif msg[0] == MessageIDs.LOAD_VOICE:
-                print(f'Loading voice: {"/".join(msg[1])}')
-                await load_voice(*msg[1])
-            elif msg[0] == MessageIDs.NEW_GROUP:
+            elif msgId == MessageIDs.VOICE_DUMP:
+                await websocket.send(json.dumps([MessageIDs.VOICE_DUMP, get_voice_as_messages(current_voice)]))
+                await websocket.send(json.dumps([MessageIDs.VOICE_LOAD, current_voice_path]))
+            elif msgId == VoiceLoadMessage.id():
+                msg = VoiceLoadMessage(msg)
+                await handle_voice_load_messge(msg)
+            elif msgId == VoiceNameMessage.id():
+                msg = VoiceNameMessage(msg)
+                current_voice.name.value = msg.voiceName()
+                for p in current_voice.name.toParameterValues():
+                    dx7.update_param(p)
+            elif msgId == VoiceStoreMessage.id():
+                msg = VoiceStoreMessage(msg)
+                handle_voice_store_messge(msg)
+            elif msgId == MessageIDs.VOICE_INIT:
+                handle_voice_init()
+            elif msgId == NewUserBankMessage.id():
+                msg = NewUserBankMessage(msg)
                 # New group
-                print(f'Creating new group: {msg[1]}')
-                os.mkdir(os.path.join(VOICES_DIR, msg[1]))
-                await broadcast(json.dumps([MessageIDs.PRESET_DUMP, dump_presets()]))
+                print(f'Creating new bank: {msg.bankName()}')
+                bm = CategoryManager('user').initBank(msg.bankName())
+                await broadcast(json.dumps([MessageIDs.BANK_DUMP, dump_presets()]))
+            elif msgId == DeleteUserBankMessage.id():
+                msg = DeleteUserBankMessage(msg)
+                CategoryManager('user')[msg.bankIndex()].delete()
+                print(f'[OK] Bank deleted')
+                await broadcast(json.dumps([MessageIDs.BANK_DUMP, dump_presets()]))
 
 async def main():
     async with serve(handle, "0.0.0.0", 5000):

@@ -39,7 +39,7 @@ class Connection {
             this.send(JSON.stringify([MESSAGE_ID.SUBSCRIBE]));
             this.send(JSON.stringify([MESSAGE_ID.VOICE_DUMP]));
             this.send(JSON.stringify([MESSAGE_ID.GET_SETTINGS]));
-            this.send(JSON.stringify([MESSAGE_ID.PRESET_DUMP]));
+            this.send(JSON.stringify([MESSAGE_ID.BANK_DUMP]));
         }
 
         this.socket.onclose = (ev) => {
@@ -62,6 +62,7 @@ class Connection {
             let msgobj = JSON.parse(msg.data);
             this._msg_enable = false;
             try {
+                console.log(msgobj);
                 getModel().update(msgobj);
             } finally {
                 this._msg_enable = true;
@@ -85,4 +86,4 @@ function getConnection() {
     return _connection;
 }
 
-export { getConnection }
+export { getConnection, WS_PORT }

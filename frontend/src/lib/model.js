@@ -188,7 +188,6 @@ class SettingsModel {
     constructor(data) {
         this._data = data;
         this._changes = {};
-        console.log(this._changes);
     }
 
     initialized() { return this._data !== undefined }
@@ -293,11 +292,18 @@ class Model {
     transpose = writable(0);
     operator_en = writable(0);
 
+    voice_name = writable('');
+
     _unsubscribes = [];
 
     settings = writable(new SettingsModel());
-    presets = writable({});
-    cur_preset = writable(undefined);
+
+    preset_banks = writable([]);
+    user_banks = writable([]);
+
+    cur_bank_cat = writable('preset');
+    cur_bank_idx = writable(0);
+    cur_voice_idx = writable(0);
 
     constructor(messages) {
         for (let i = 0; i < 6; i++) {
@@ -324,6 +330,7 @@ class Model {
         this._unsubscribes.push(this.mod_sens_pitch.subscribe((val) => { send_message(VOICE_PARAM.MOD_SENS_PITCH, val); }));
         this._unsubscribes.push(this.transpose.subscribe((val) => { send_message(VOICE_PARAM.TRANSPOSE, val); }));
         this._unsubscribes.push(this.operator_en.subscribe((val) => { send_message(VOICE_PARAM.OPERATOR_EN, val); }));
+        this._unsubscribes.push(this.voice_name.subscribe((val) => { send_message(MESSAGE_ID.VOICE_NAME, val); }));
     }
 
     load_voice(category, groupname, voicename) {
@@ -333,84 +340,92 @@ class Model {
     update(messages) {
         if (!messages) return;
         if (!Array.isArray(messages[0])) messages = [messages, ];
-        for (let i in messages) {
-            if (messages[i][0] <= 125) {
-                let [idx, _] = util.to_osc_param(messages[i][0]);
-                this.oscs[idx].update(messages[i]);
+
+        for (let msg of messages) {
+            if (msg[0] <= 125) {
+                let [idx, _] = util.to_osc_param(msg[0]);
+                this.oscs[idx].update(msg);
             } else {
-                switch (messages[i][0]) {
+                switch (msg[0]) {
                     case VOICE_PARAM.PITCH_RATE_1:
-                        this.pitch_rate1.set(messages[i][1]);
+                        this.pitch_rate1.set(msg[1]);
                         break;
                     case VOICE_PARAM.PITCH_RATE_2:
-                        this.pitch_rate2.set(messages[i][1]);
+                        this.pitch_rate2.set(msg[1]);
                         break;
                     case VOICE_PARAM.PITCH_RATE_3:
-                        this.pitch_rate3.set(messages[i][1]);
+                        this.pitch_rate3.set(msg[1]);
                         break;
                     case VOICE_PARAM.PITCH_RATE_4:
-                        this.pitch_rate4.set(messages[i][1]);
+                        this.pitch_rate4.set(msg[1]);
                         break;
                     case VOICE_PARAM.PITCH_LEVEL_1:
-                        this.pitch_level1.set(messages[i][1]);
+                        this.pitch_level1.set(msg[1]);
                         break;
                     case VOICE_PARAM.PITCH_LEVEL_2:
-                        this.pitch_level2.set(messages[i][1]);
+                        this.pitch_level2.set(msg[1]);
                         break;
                     case VOICE_PARAM.PITCH_LEVEL_3:
-                        this.pitch_level3.set(messages[i][1]);
+                        this.pitch_level3.set(msg[1]);
                         break;
                     case VOICE_PARAM.PITCH_LEVEL_4:
-                        this.pitch_level4.set(messages[i][1]);
+                        this.pitch_level4.set(msg[1]);
                         break;
                     case VOICE_PARAM.ALGO_SEL:
-                        this.algo_sel.set(messages[i][1]);
+                        this.algo_sel.set(msg[1]);
                         break;
                     case VOICE_PARAM.FEEDBACK:
-                        this.feedback.set(messages[i][1]);
+                        this.feedback.set(msg[1]);
                         break;
                     case VOICE_PARAM.OSC_SYNC:
-                        this.osc_sync.set(messages[i][1]);
+                        this.osc_sync.set(msg[1]);
                         break;
                     case VOICE_PARAM.LFO_SPEED:
-                        this.lfo_speed.set(messages[i][1]);
+                        this.lfo_speed.set(msg[1]);
                         break;
                     case VOICE_PARAM.LFO_DELAY:
-                        this.lfo_delay.set(messages[i][1]);
+                        this.lfo_delay.set(msg[1]);
                         break;
                     case VOICE_PARAM.LFO_PITCH_MOD:
-                        this.lfo_pitch_mod.set(messages[i][1]);
+                        this.lfo_pitch_mod.set(msg[1]);
                         break;
                     case VOICE_PARAM.LFO_AMP_MOD:
-                        this.lfo_amp_mod.set(messages[i][1]);
+                        this.lfo_amp_mod.set(msg[1]);
                         break;
                     case VOICE_PARAM.LFO_SYNC:
-                        this.lfo_sync.set(messages[i][1]);
+                        this.lfo_sync.set(msg[1]);
                         break;
                     case VOICE_PARAM.LFO_WAVE:
-                        this.lfo_wave.set(messages[i][1]);
+                        this.lfo_wave.set(msg[1]);
                         break;
                     case VOICE_PARAM.MOD_SENS_PITCH:
-                        this.mod_sens_pitch.set(messages[i][1]);
+                        this.mod_sens_pitch.set(msg[1]);
                         break;
                     case VOICE_PARAM.TRANSPOSE:
-                        this.transpose.set(messages[i][1]);
+                        this.transpose.set(msg[1]);
                         break;
                     case VOICE_PARAM.OPERATOR_EN:
-                        this.operator_en.set(messages[i][1]);
+                        this.operator_en.set(msg[1]);
                         break;
                     case MESSAGE_ID.SET_SETTINGS:
-                        this.settings.set(new SettingsModel(messages[i][1]));
+                        this.settings.set(new SettingsModel(msg[1]));
                         break;
-                    case MESSAGE_ID.PRESET_DUMP:
-                        this.presets.set(messages[i][1]);
+                    case MESSAGE_ID.BANK_DUMP:
+                        this.preset_banks.set(msg[1].preset);
+                        this.user_banks.set(msg[1].user);
                         break;
-                    case MESSAGE_ID.LOAD_VOICE:
-                        this.cur_preset.set(messages[i][1]);
+                    case MESSAGE_ID.VOICE_NAME:
+                        this.voice_name.set(msg[1]);
+                        break;
+                    case MESSAGE_ID.VOICE_LOAD:
+                        const [cat, bi, vi] = msg[1];
+                        this.cur_bank_cat.set(cat);
+                        this.cur_bank_idx.set(bi);
+                        this.cur_voice_idx.set(vi);
                         break;
 
                     default:
-                        console.log("ERROR: Unhandled message", messages[i]);
+                        console.log("ERROR: Unhandled message", msg);
                 }
             }
         }
