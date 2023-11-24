@@ -50,16 +50,20 @@ const MESSAGE_ID = {
     VOICE_DUMP: 201,
     BANK_DUMP: 202,
     VOICE_LOAD: 203,        // {category, bankIndex, voiceIndex}
-    BANK_UPLOAD: 204,       // {category, bankIndex}
 
     NEW_USER_BANK: 210,     // {bankName}
     DELETE_USER_BANK: 211,  // {bankIndex}
+    BANK_UPLOAD: 212,       // {bankName, bankData}
+
+
     VOICE_INIT: 220,
     VOICE_NAME: 221,        // {voiceName}
     VOICE_STORE: 222,       // {voiceIndex}
 
     GET_SETTINGS: 230,
-    SET_SETTINGS: 231
+    SET_SETTINGS: 231,
+
+    ERROR_MESSAGE: 666
 };
 
 export { OSC_PARAM, VOICE_PARAM, MESSAGE_ID };

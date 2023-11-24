@@ -2,8 +2,7 @@ import { writable } from "svelte/store";
 import { MESSAGE_ID, OSC_PARAM, VOICE_PARAM } from "./const";
 import * as util from "./util.js";
 import { getConnection } from "./connection";
-
-
+import { showMessage } from "./errorMessage.js";
 
 var msg_enable = true;
 
@@ -423,7 +422,9 @@ class Model {
                         this.cur_bank_idx.set(bi);
                         this.cur_voice_idx.set(vi);
                         break;
-
+                    case MESSAGE_ID.ERROR_MESSAGE:
+                        showMessage(msg[1]);
+                        break;
                     default:
                         console.log("ERROR: Unhandled message", msg);
                 }

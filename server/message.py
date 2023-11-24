@@ -9,12 +9,16 @@ class MessageIDs:
 
     NEW_USER_BANK = 210     # {bankName}
     DELETE_USER_BANK = 211  # {bankIndex}
+    BANK_UPLOAD = 212       # {bankName, data}
+
     VOICE_INIT = 220        # {}
     VOICE_NAME = 221        # {voiceName}
     VOICE_STORE = 222       # {voiceIndex(0-31)}
 
     GET_SETTINGS = 230
     SET_SETTINGS = 231
+
+    ERROR_MESSAGE = 666
 
 
 class Message(list):
@@ -92,7 +96,10 @@ class DeleteUserBankMessage(Message):
         return MessageIDs.DELETE_USER_BANK
     
     def bankIndex(self) -> int:
-        return int(self[1])
+        return int(self[1][1])
+    
+    def bankCategory(self) -> str:
+        return str(self[1][0])
 
 class GetSettingsMessage(Message):
     @staticmethod

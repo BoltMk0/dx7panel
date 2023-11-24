@@ -62,7 +62,6 @@ class Connection {
             let msgobj = JSON.parse(msg.data);
             this._msg_enable = false;
             try {
-                console.log(msgobj);
                 getModel().update(msgobj);
             } finally {
                 this._msg_enable = true;

@@ -28,22 +28,56 @@
         for(const u of unsubscribes) u();
     });
 
-    $: shown_bank_idx = category === 'preset' ? bank_idx : preset_bank_data.length + bank_idx;
+    $: shown_bank_category = category;
+    $: shown_bank_idx = bank_idx;
     $: console.log(category, bank_idx, shown_bank_idx);
 
+    let storeMode = false;
+
     function onVoiceBtnPress(i){
-        let cat = shown_bank_idx > preset_bank_data.length ? 'user' : 'preset';
-        let bi = shown_bank_idx > preset_bank_data.length ? shown_bank_idx - preset_bank_data.length : shown_bank_idx;
-        getConnection().send([MESSAGE_ID.VOICE_LOAD, [cat, bi, i]]);
+        if(storeMode){
+            getConnection().send([MESSAGE_ID.VOICE_STORE, [shown_bank_category, shown_bank_idx, i]]);
+            storeMode = false;
+        } else {
+            getConnection().send([MESSAGE_ID.VOICE_LOAD, [shown_bank_category, shown_bank_idx, i]]);
+        }
     }
 
     function bankShift(amt){
-        shown_bank_idx = Math.max(0, Math.min(preset_bank_data.length + user_bank_data.length - 1, shown_bank_idx+amt));
+        shown_bank_idx+=amt;
+        if(shown_bank_category == 'preset'){
+            if(shown_bank_idx >= preset_bank_data.length){
+                shown_bank_idx -= preset_bank_data.length;
+                shown_bank_category = 'user';
+            } else if(shown_bank_idx < 0){
+                shown_bank_idx == 0;
+            }
+        } else if(shown_bank_category == 'user'){
+            if(shown_bank_idx < 0){
+                shown_bank_idx += preset_bank_data.length;
+                shown_bank_category = 'preset';
+            } else if(shown_bank_idx >= user_bank_data.length){
+                shown_bank_idx = user_bank_data.length-1
+            }
+        }
     }
 
-    $: bank = shown_bank_idx >= preset_bank_data.length ? user_bank_data[shown_bank_idx - preset_bank_data.length] : preset_bank_data[shown_bank_idx];
+    function onStore(){
+        storeMode = !storeMode;
+    }
+
+    function onInit(){
+        getConnection().send([MESSAGE_ID.VOICE_INIT]);
+    }
+
+    $: bank = (shown_bank_category == 'user' ? user_bank_data : preset_bank_data)[shown_bank_idx];
+
 </script>
 <style>
+.bank-view-main{
+    display: grid;
+    justify-content: center;
+}
 .bank-view-voice-btn-container{
     display: grid;
     grid-template-columns: repeat(16, min-content);
@@ -69,6 +103,7 @@
     gap: 3px;
     justify-content: center;
     padding: 5px;
+    position: relative;
 }
 
 .bank-view-title{
@@ -80,34 +115,81 @@
     cursor: pointer;
 }
 
+.function-btn-container{
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    padding: 5px 0;
+}
+
+.function-btn-container > button{
+    width: 80px;
+    background-color: orange;
+    height: 100%;
+    padding: 10px;
+    font-size: large;
+    color: white;
+}
+
+.function-btn-container > button:disabled{
+    opacity: 0.5;
+}
+
 .bank-view-header > button{
     width: 45px;
     background-color: #0f8465;
     color: white;
     font-size:large;
 }
+
+@keyframes flashing {
+  0% {
+    background-color: #0f8465;
+  }
+  50% {
+    background-color: #34c29c;
+  }
+  100% {
+    background-color: #0f8465;
+  }
+}
+
+.flashing{
+    animation: flashing 250ms infinite;
+}
+
 </style>
 
 
 
 
 <div class='bank-view-main'>
-    <div class='bank-view-header'>
-        <button on:click={()=>{bankShift(-10)}}>-10</button>
-        <button on:click={()=>{bankShift(-1)}}>-</button>
-        <div>
-            <div style="text-align: center; opacity: 0.5">Bank</div>
-            <div class='bank-view-title' on:click={()=>{dispatcher('showpresets')}}>{shown_bank_idx >= preset_bank_data.length ? "U" : "P"}{shown_bank_idx+1}: {bank?.name}</div>
-        </div>
-        <button on:click={()=>{bankShift(1)}}>+</button>
-        <button on:click={()=>{bankShift(10)}}>+10</button>
-    </div>
-    <div class='bank-view-voice-btn-container'>
-        {#each {length: 32} as _, i}
-            <div class='bank-view-voice-btn{ (shown_bank_idx >= preset_bank_data.length ? shown_bank_idx - preset_bank_data.length : shown_bank_idx) === bank_idx && voice_idx === i ? " selected" : ""}' on:click={()=>{onVoiceBtnPress(i);}}>
-                <div>{i+1}</div>
-                <div style="font-size: x-small; overflow: hidden">{bank?.voices[i]}</div>
+    <div style="width: min-content;">
+        <div class='bank-view-header'>
+            <div class='function-btn-container'>
+                <button class='store-btn{storeMode ? " flashing" : ""}' on:click|stopPropagation={onStore} disabled={shown_bank_idx < preset_bank_data.length}>Store</button>
+                <button class='store-btn' on:click={onInit}>Init</button>
             </div>
-        {/each}
+
+            <button on:click={()=>{bankShift(-10)}}>-10</button>
+            <button on:click={()=>{bankShift(-1)}}>-</button>
+            <div>
+                <div style="text-align: center; opacity: 0.5; font-size: small;">Bank</div>
+                <div class='bank-view-title' on:click={()=>{dispatcher('showpresets')}}>{shown_bank_category[0].toUpperCase()}{shown_bank_idx+1}: {bank?.name}</div>
+            </div>
+            <button on:click={()=>{bankShift(1)}}>+</button>
+            <button on:click={()=>{bankShift(10)}}>+10</button>
+        </div>
+        <div class='bank-view-voice-btn-container'>
+            {#each {length: 32} as _, i}
+                <div class='bank-view-voice-btn{shown_bank_category === category && shown_bank_idx === bank_idx && voice_idx === i ? " selected" : ""}{storeMode ? " flashing" : ""}' on:click={()=>{onVoiceBtnPress(i);}}>
+                    <div>{i+1}</div>
+                    <div style="font-size: x-small; overflow: hidden">{bank?.voices[i]}</div>
+                </div>
+            {/each}
+        </div>
     </div>
 </div>
+
+<svelte:window on:click={()=>{storeMode = false;}}/>

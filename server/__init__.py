@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any
+from typing import Any, List
 from websockets.server import serve
 from websockets.legacy.protocol import broadcast
 from websockets.exceptions import *
@@ -9,7 +9,7 @@ import os
 import sys
 import shutil
 
-from .dx7programmer import DX7Controller, DX7Voice, VoiceParameterValue
+from .dx7programmer import DX7Controller, DX7Voice, VoiceParameterValue, DX7VoiceBank
 
 VERSION = "1.0-beta"
 
@@ -39,7 +39,7 @@ class CategoryManager:
         return len(self.listBankDirs(self.dirpath()))
     
     def initBank(self, bankName: str):
-        bankDirname = f'{len(self):02}_{bankName}'
+        bankDirname = f'{bankName}'
         bankDirpath = os.path.join(VOICES_DIR, self.name, bankDirname)
         assert not os.path.exists(bankDirpath)
 
@@ -52,10 +52,20 @@ class CategoryManager:
         return BankManager.fromDir(bankDirpath)
     
     @staticmethod
-    def listBankDirs(dirpath):
+    def listBankDirs(dirpath) -> List[str]:
         to_ret = [i for i in os.listdir(dirpath) if BankManager.IsBankDir(os.path.join(dirpath, i))]
         to_ret.sort()
         return to_ret
+    
+
+    def newBankFrom(self, name: str, bank: DX7VoiceBank):
+        name = name.strip()
+        if name in self.listBankDirs(self.dirpath()):
+            raise FileExistsError('User bank with name {name} already exists')
+        bdpath = os.path.join(self.dirpath(), name)
+        os.mkdir(bdpath)
+        for i in range(len(bank)):
+            bank[i].save(os.path.join(bdpath, f'{i:02}_{bank[i].name.value}:10.syx'.replace(' ', '_')))
 
 class BankManager:
     def __init__(self, category: str, index: int, name: str):
@@ -110,7 +120,6 @@ class BankManager:
     
     def delete(self):
         shutil.rmtree(self.dirpath())
-
 
 
 class VoiceManager:
@@ -168,7 +177,6 @@ class DX7Voice2(DX7Voice):
     def __init__(self, name=None):
         super().__init__(name)
         self._param_map = None
-        self.index = None
     
     def param_map(self) -> Dict[int, VoiceParameterValue]:
         if self._param_map is None:
@@ -229,9 +237,6 @@ class DX7Voice2(DX7Voice):
     
     def __getitem__(self, k: int):
         return self.param_map()[k]
-    
-    def filename(self):
-        return f'{self.index:02}_{self.name.value[:10].replace(" ", "_")}.syx'
 
     @classmethod
     def from_file(cls, filepath):
@@ -247,8 +252,7 @@ def get_voice_as_messages(voice: DX7Voice2=None):
     if voice is None:
         voice = current_voice
 
-    vfp = voice.filename()
-    print(vfp)
+    print(current_voice_path)
     return [[k, voice[k].value] for k in voice.keys()] + [[MessageIDs.VOICE_NAME, voice.name.value],]
 
 async def broadcast(msg):
@@ -261,6 +265,7 @@ async def broadcast(msg):
 async def handle_voice_init():
     global current_voice
     current_voice = DX7Voice2(current_voice.name.value)
+    print('INIT')
     await broadcast(json.dumps(get_voice_as_messages(current_voice)))
 
 async def handle_voice_load_messge(msg: VoiceLoadMessage):
@@ -278,11 +283,15 @@ async def handle_voice_load_messge(msg: VoiceLoadMessage):
         print(f'[ER] {e}')
         
 async def handle_voice_store_messge(msg: VoiceStoreMessage):
+    global current_voice, current_voice_path
     old_filepath = CategoryManager(msg.category())[msg.bankIndex()][msg.voiceIndex()].filepath()
-    new_filepath = os.path.join(os.path.dirname(fp), f'{msg.bankIndex():02}_{current_voice.name.value.replace(" ", "_")}.syx')
+    new_filepath = os.path.join(os.path.dirname(old_filepath), f'{msg.voiceIndex():02}_{current_voice.name.value.replace(" ", "_")}.syx')
     if old_filepath != new_filepath:
         os.remove(old_filepath)
     current_voice.save(new_filepath)
+    current_voice_path = [msg.category(), msg.bankIndex(), msg.voiceIndex()]
+    await broadcast(json.dumps([MessageIDs.BANK_DUMP, dump_presets()]))
+    await broadcast(json.dumps([MessageIDs.VOICE_LOAD, current_voice_path]))
 
 def dump_presets():
     pm = CategoryManager('preset')
@@ -360,25 +369,61 @@ async def handle(websocket):
                 current_voice.name.value = msg.voiceName()
                 for p in current_voice.name.toParameterValues():
                     dx7.update_param(p)
+                await broadcast(json.dumps([MessageIDs.VOICE_NAME, current_voice.name.value]))
             elif msgId == VoiceStoreMessage.id():
                 msg = VoiceStoreMessage(msg)
-                handle_voice_store_messge(msg)
+                if(msg.category() != 'user'):
+                    await websocket.send(json.dumps([MessageIDs.ERROR_MESSAGE, 'Cannot overwrite non-user bank']))
+                else:
+                    await handle_voice_store_messge(msg)
             elif msgId == MessageIDs.VOICE_INIT:
-                handle_voice_init()
+                await handle_voice_init()
             elif msgId == NewUserBankMessage.id():
                 msg = NewUserBankMessage(msg)
                 # New group
                 print(f'Creating new bank: {msg.bankName()}')
-                bm = CategoryManager('user').initBank(msg.bankName())
-                await broadcast(json.dumps([MessageIDs.BANK_DUMP, dump_presets()]))
+                try:
+                    bm = CategoryManager('user').initBank(msg.bankName())
+                    await broadcast(json.dumps([MessageIDs.BANK_DUMP, dump_presets()]))
+                except Exception as e:
+                    await websocket.send(json.dumps([MessageIDs.ERROR_MESSAGE, str(e)]))
+
             elif msgId == DeleteUserBankMessage.id():
                 msg = DeleteUserBankMessage(msg)
-                CategoryManager('user')[msg.bankIndex()].delete()
-                print(f'[OK] Bank deleted')
+                if msg.bankCategory() != 'user':
+                    await websocket.send(json.dumps([MessageIDs.ERROR_MESSAGE, 'Cannot delete non-user bank']))
+                else:
+                    try:
+                        CategoryManager('user')[msg.bankIndex()].delete()
+                        print(f'[OK] Bank deleted')
+                        await broadcast(json.dumps([MessageIDs.BANK_DUMP, dump_presets()]))
+                    except Exception as e:
+                        await websocket.send(json.dumps([MessageIDs.ERROR_MESSAGE, str(e)]))
+            elif msgId == MessageIDs.BANK_UPLOAD:
+                newBankName = msg[1][0]
+                msgData = msg[1][1].encode()
+                newBankHeader = msgData[:3]
+                if not newBankHeader.startswith(bytes([0xEF, 0xBF, 0xBD])):
+                    raise ValueError('Unexpected starting bytes: ', newBankHeader)
+                msgData = bytes([240]) + msgData[3:]
+                newBank = DX7VoiceBank.from_sysex(msgData)
+                CategoryManager('user').newBankFrom(newBankName, newBank)
                 await broadcast(json.dumps([MessageIDs.BANK_DUMP, dump_presets()]))
+            else:
+                print('[WN] Unhandled message: ')
+                print(msg)
 
-async def main():
-    async with serve(handle, "0.0.0.0", 5000):
+async def main(args = None):
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--host', default='0.0.0.0', help='Host on which to run the server (default 0.0.0.0)')
+    ap.add_argument('--port', '-p', default=5000, type=int, help='Port on which to run the server (default 5000)')
+
+    pargs = ap.parse_args(args)
+
+    async with serve(handle, pargs.host, pargs.port):
+
+        print(f'[OK] Serving  {pargs.host}:{pargs.port}')
         await asyncio.Future()  # run forever
 
 asyncio.run(main())

@@ -12,6 +12,7 @@
     import ConnectionLed from "../lib/ConnectionLED.svelte";
     import BankView from "./BankView.svelte";
     import {MESSAGE_ID} from "$lib/const.js";
+    import {showMessage} from "$lib/errorMessage.js";
 
     const model = getModel();
     const connection = getConnection();
@@ -60,7 +61,7 @@
     let voice_name;
 
 
-    unsubscribes.push(model.voice_name.subscribe((val)=>{voice_name=val;}));
+    unsubscribes.push(model.voice_name.subscribe((val)=>{voice_name=val.trim();}));
     unsubscribes.push(model.pitch_level1.subscribe((val)=>{pl1_val=val;}));
     unsubscribes.push(model.pitch_level2.subscribe((val)=>{pl2_val=val;}));
     unsubscribes.push(model.pitch_level3.subscribe((val)=>{pl3_val=val;}));
@@ -116,8 +117,15 @@
         for(let u in unsubscribes) unsubscribes[u]();
     });
 
+    let voiceNameInput;
+    function checkVoiceName(){
+        if(voiceNameInput.value.length > 10){
+            voiceNameInput.value = voiceNameInput.value.substring(0, 10);
+        }
+    }
 
-    function setVoiceName(newName){
+    function setVoiceName(){
+        let newName = voiceNameInput.value;
         connection.send([MESSAGE_ID.VOICE_NAME, newName]);
     }
 
@@ -283,7 +291,7 @@
                             </div>
                             <div>
                                 <div>Voice Name</div>
-                                <input class='voice-name-input' on:change={(ev)=>{setVoiceName(ev.target.value);}} value="{voice_name}"/>
+                                <input bind:this={voiceNameInput} class='voice-name-input' on:input={checkVoiceName} on:change={setVoiceName} value="{voice_name}"/>
                             </div>
                         </div>
                     </div>
@@ -368,11 +376,11 @@
                     </div>
                 </div>
             </div>
-            <div style="overflow: hidden; display: grid;">
+            <div style="overflow: hidden; display: grid; align-items: start; align-content: center; grid-template-rows: min-content;">
                 <div class='bank-view-container'>
                     <BankView on:showpresets={()=>{presets_visible = true;}}/>
                 </div>
-                <div style="display: grid; grid-template-rows: auto 1fr; overflow-y: scroll; ">
+                <div style="display: grid; grid-template-rows: auto 1fr; overflow-y: scroll; max-height: 100%; ">
                     <div class="section-header">OSCs</div>
                     <div style="display: grid; align-items: center; padding: 20px;">
                         <div id="osc-container">

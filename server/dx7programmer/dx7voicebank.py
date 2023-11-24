@@ -137,14 +137,14 @@ class Envelope(ParameterGroupBase):
     def __init__(self, id_start: int):
         super(Envelope, self).__init__()
         self.id_start = id_start
-        self.rate1 = VoiceParameterValue(id_start)
-        self.rate2 = VoiceParameterValue(id_start+1)
-        self.rate3 = VoiceParameterValue(id_start+2)
-        self.rate4 = VoiceParameterValue(id_start+3)
-        self.level1 = VoiceParameterValue(id_start+4)
-        self.level2 = VoiceParameterValue(id_start+5)
-        self.level3 = VoiceParameterValue(id_start+6)
-        self.level4 = VoiceParameterValue(id_start+7)
+        self.rate1 = VoiceParameterValue(id_start, 99)
+        self.rate2 = VoiceParameterValue(id_start+1, 99)
+        self.rate3 = VoiceParameterValue(id_start+2, 99)
+        self.rate4 = VoiceParameterValue(id_start+3, 99)
+        self.level1 = VoiceParameterValue(id_start+4, 99 if id_start < 126 else 50)
+        self.level2 = VoiceParameterValue(id_start+5, 99 if id_start < 126 else 50)
+        self.level3 = VoiceParameterValue(id_start+6, 99 if id_start < 126 else 50)
+        self.level4 = VoiceParameterValue(id_start+7, 0 if id_start < 126 else 50)
 
     def points(self):
         return [(self.rate1, self.level1),
@@ -208,7 +208,7 @@ class Operator(ParameterGroupBase):
         self.osc_mode = VoiceParameterValue(param_id_start + 17)
         self.freq_coarse = VoiceParameterValue(param_id_start + 18)
         self.freq_fine = VoiceParameterValue(param_id_start + 19)
-        self.detune = VoiceParameterValue(param_id_start + 20)
+        self.detune = VoiceParameterValue(param_id_start + 20, 7)
 
     def __bytes__(self):
         return self.encode(True)
