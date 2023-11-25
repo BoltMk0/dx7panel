@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { writable, get } from "svelte/store";
 import { getModel } from "./model"
 import { MESSAGE_ID } from "./const.js";
 
@@ -71,7 +71,9 @@ class Connection {
 
     send(msg) {
         if(typeof msg !== 'string') msg = JSON.stringify(msg);
-        if (this._msg_enable && this.socket) this.socket.send(msg);
+        if (this._msg_enable && this.socket && get(this.connected) == 2){
+            this.socket.send(msg);
+        }
     }
 }
 
