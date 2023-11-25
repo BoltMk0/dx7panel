@@ -311,9 +311,6 @@ class DX7Controller:
                 if midi_type == MIDI_TYPE.KEY_ON:
                     midi_data[2] = round(100*midi_data[2]/127)
             if len(midi_data) == 3:
-                print(midi_data)
-                print(midi.get_device_info(self._midi_output.device_id))
-                self._midi_output.note_on(70, 50, 0)
                 self._midi_output.write_short(*midi_data)
 
     def get_velocity_correction(self):
