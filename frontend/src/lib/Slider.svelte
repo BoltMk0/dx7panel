@@ -32,21 +32,6 @@
         }   
     }
 
-    let scrollTopMem;
-    let scrollLeftMem;
-    function disableScroll(){
-        scrollTopMem = window.pageYOffset || document.documentElement.scrollTop;
-        scrollLeftMem = window.pageXOffset || document.documentElement.scrollLeft;
-
-        window.onscroll = function(){
-            window.scrollTo(scrollLeftMem, scrollTopMem);
-        }
-    }
-
-    function enableScroll(){
-        window.onscroll = function(){};
-    }
-
     function onTouchDown(ev){
         _touchmem = vertical ? ev.changedTouches[0].pageY : -ev.changedTouches[0].pageX;
         _moving = true;
@@ -73,18 +58,15 @@
     }
     .slider-main{
         position: relative;
-        touch-action: none;
     }
     .slider-bg{
         position: absolute;
         background-color: rgb(27, 146, 130);
-        touch-action: none;
     }
     .slider-thumb{
         position: absolute;
         border-radius: 50%;
         background-color: #0f8465;
-        touch-action: none;
     }
     .draggable{
         user-select: none;
@@ -97,6 +79,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        touch-action: none;
         padding: 10px;
     }
 </style>
