@@ -23,10 +23,13 @@
     function onMouseDown(ev){
         valFloat = value;
         clicked = true;
+        _touchmem = ev;
     }
 
     function onMouseMove(ev){
         if(!clicked) return;
+        let t1 = calcAngle(_touchmem, ev);
+        let t2 = calcValFromAngle(t1);
         if(ev.movementY === 0) return;
         valFloat = Math.min(max, Math.max(min, valFloat - valRange*(ev.movementY)/100));
         value = Math.round(valFloat);
@@ -38,21 +41,41 @@
 
 
     function onTouchDown(ev){
-        _touchmem = ev.changedTouches[0].pageY;
+        valFloat = value;
+        _touchmem = ev.changedTouches[0];
         clicked = true;
     }
 
+    function calcAngle(point1, point2){
+        const dy = point2.pageY - point1.pageY;
+        const dx = point2.pageX - point1.pageX;
+        if(dy === 0) return dx < 0 ? -90 : 90;
+        const s = 180/Math.PI
+        const t = Math.atan(-dx/dy)*s;
+        if(dy <= 0){
+            return t;
+        } else {
+            if(dx < 0){
+                return -180 + t;
+            } else {
+                return 180 + t;
+            }
+        }
+    }
+
+    function calcValFromAngle(angle){
+        angle = Math.max(ROTATION_MIN, Math.min(ROTATION_MAX, angle));
+        const scaled = (angle - ROTATION_MIN) / ROTATION_RANGE;
+        return min + valRange*scaled;
+    }
+    
     function onTouchMove(ev){
         if(clicked){
-            ev.stopPropagation();
-            const touch = ev.changedTouches[0].pageY;
-            const d = (_touchmem - touch)*max/size/4;
-            const new_value = Math.min(max, Math.max(0, valFloat + d));
+            const new_value = calcValFromAngle(calcAngle(_touchmem, ev.changedTouches[0]));
             if(!isNaN(new_value)){
                 valFloat = new_value;
                 value = Math.round(valFloat);
             }
-            _touchmem = touch;
         }   
     }
 
@@ -60,6 +83,7 @@
 <style>
     .my-knob-main{
         position: relative;
+        touch-action: none;
     }
 
     .my-knob-img{
@@ -109,7 +133,7 @@
     }
 </style>
 <div class='my-knob-main'>
-    <div class='my-knob-container' on:mousedown={onMouseDown} on:touchstart={onTouchDown} style="cursor: pointer; width: fit-content; height: fit-content;">
+    <div class='my-knob-container' on:mousedown={onMouseDown} on:touchstart={onTouchDown} style="cursor: pointer; width: fit-content; height: fit-content; background-color: {clicked ? 'red' : null}">
         <div class="my-knob-img" style="width: {size}px; height: {size}px; transform: rotate({knob_rotation}deg)">
             <div class="my-knob-line" style="width: {size/6}px; height: {size/6}px;"/>
         </div>
@@ -130,5 +154,4 @@
     <div style="text-align: center;">{label}</div>
     {/if}
 </div>
-<svelte:body on:mousemove={onMouseMove} on:mouseup={onMouseUp} />
-<svelte:window on:touchmove={onTouchMove} on:touchend={onMouseUp}/>
+<svelte:window on:touchmove={onTouchMove} on:touchend={onMouseUp} on:mousemove={onMouseMove} on:mouseup={onMouseUp} />
