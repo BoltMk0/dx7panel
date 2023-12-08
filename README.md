@@ -11,7 +11,7 @@ This is responsible for all communications to the DX7, and optionally from an ex
 - Frontent<br>
 This is a web server that is accessed from any device with a web browser on the network.
 
-![DX7Panel user interface](/screenshots/workflow.drawio.png?raw=true "DX7Panel User Interface")
+![DX7Panel System Diagram](/screenshots/workflow.drawio.png?raw=true "DX7Panel System Diagram")
 
 # Setup 
 ## Backend (AKA Server)
