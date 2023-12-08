@@ -86,6 +86,12 @@ sudo docker run -p 80:3000 --name dx7panel-frontend
 
 I don't have time to document the entire UI, but the essentials:
 
+## Setting up the DX7 to accept the control messages (Instructions for a DX7 Mk1)
+- Navigate to the function control settings (press "FUNCTION/space" then the "8" button). You should see "FUNCTION CONTROL" on the top line of the display.
+- Set MIDI CH = 1
+- Press the "8" button again to show system info availability and press the "Yes/+1/On" button so that the display shows "SYS INFO AVAIL"
+- Disable internal memory protection: press "Internal" in the "MEMORY PROTECT" button section, and press "No/-1/Off" so that the display shows "MEMORY PROTECT / INTERNAL OFF"
+
 ## Configuring the MIDI I/O
 Open a web browser, and navigate to `http://<dx7panel-host>/settings` (make sure you replace \<dx7panel-host\> with the IP address of the host running the frontend) and wait for the connection LED (top left corner) to turn green.
 
