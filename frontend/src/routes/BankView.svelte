@@ -45,19 +45,23 @@
 
     function bankShift(amt){
         shown_bank_idx+=amt;
-        if(shown_bank_category == 'preset'){
+        if(shown_bank_category === 'preset'){
             if(shown_bank_idx >= preset_bank_data.length){
+                // We're going into user banks
                 shown_bank_idx -= preset_bank_data.length;
                 shown_bank_category = 'user';
-            } else if(shown_bank_idx < 0){
-                shown_bank_idx == 0;
+                shown_bank_idx = Math.min(shown_bank_idx, user_bank_data.length);
+            } else {
+                shown_bank_idx = Math.max(0, shown_bank_idx);
             }
-        } else if(shown_bank_category == 'user'){
+        } else if(shown_bank_category === 'user'){
             if(shown_bank_idx < 0){
+                // Going down into the preset banks
                 shown_bank_idx += preset_bank_data.length;
                 shown_bank_category = 'preset';
-            } else if(shown_bank_idx >= user_bank_data.length){
-                shown_bank_idx = user_bank_data.length-1
+                shown_bank_idx = Math.max(0, shown_bank_idx);
+            } else{
+                shown_bank_idx = Math.min(user_bank_data.length-1, shown_bank_idx);
             }
         }
     }
