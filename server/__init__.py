@@ -252,7 +252,6 @@ def get_voice_as_messages(voice: DX7Voice2=None):
     if voice is None:
         voice = current_voice
 
-    print(current_voice_path)
     return [[k, voice[k].value] for k in voice.keys()] + [[MessageIDs.VOICE_NAME, voice.name.value],]
 
 async def broadcast(msg):
@@ -265,7 +264,6 @@ async def broadcast(msg):
 async def handle_voice_init():
     global current_voice
     current_voice = DX7Voice2(current_voice.name.value)
-    print('INIT')
     await broadcast(json.dumps(get_voice_as_messages(current_voice)))
 
 async def handle_voice_load_messge(msg: VoiceLoadMessage):

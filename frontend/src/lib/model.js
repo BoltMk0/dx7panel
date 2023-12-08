@@ -193,7 +193,7 @@ class SettingsModel {
 
     get_input_devices() {
         if (!this.initialized()) return Array(0);
-        return this._data["midi_in"]["choices"];
+        return [...this._data["midi_in"]["choices"], null];
     }
 
     get_input_device() {
@@ -203,7 +203,7 @@ class SettingsModel {
 
     set_input_device(device) {
         if (!this.initialized()) return;
-        if (!this.get_input_devices().includes(device)) {
+        if (device !== null && !this.get_input_devices().includes(device)) {
             throw new TypeError("Not a valid device: " + String(device));
         }
         this._data["midi_in"]["value"] = device;
@@ -212,7 +212,7 @@ class SettingsModel {
 
     get_output_devices() {
         if (!this.initialized()) return Array(0);
-        return this._data["midi_out"]["choices"];
+        return [...this._data["midi_out"]["choices"], null];
     }
 
     get_output_device() {
@@ -222,7 +222,7 @@ class SettingsModel {
 
     set_output_device(device) {
         if (!this.initialized()) return;
-        if (!this.get_output_devices().includes(device)) {
+        if (device !== null && !this.get_output_devices().includes(device)) {
             throw new TypeError("Not a valid device: " + String(device));
         }
         this._data["midi_out"]["value"] = device;
@@ -231,7 +231,7 @@ class SettingsModel {
 
     get_thru_devices() {
         if (!this.initialized()) return [];
-        return this._data["midi_thru"]["choices"];
+        return [...this._data["midi_thru"]["choices"], null];
     }
 
     get_thru_device() {
@@ -241,7 +241,7 @@ class SettingsModel {
 
     set_thru_device(device) {
         if (!this.initialized()) return;
-        if (!this.get_thru_devices().includes(device)) {
+        if (device !== null && !this.get_thru_devices().includes(device)) {
             throw new TypeError("Not a valid device: " + String(device));
         }
         this._data["midi_thru"]["value"] = device;

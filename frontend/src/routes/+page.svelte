@@ -138,6 +138,8 @@
     :global(body){
         margin: 0;
         user-select: none;
+        background: black;
+        color: #EEE;
     }
 
     :global(.osc-panel) {
@@ -146,11 +148,6 @@
 
     :global(.osc-section) {
         background-color: #333;
-    }
-
-    :global(body){
-        background: black;
-        color: #EEE;
     }
 
     #main-window{
