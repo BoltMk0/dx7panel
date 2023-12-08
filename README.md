@@ -109,10 +109,15 @@ This is an optional device whos MIDI message will get passed through to the DX7.
 - Velocity Correction <br>
 The DX7 expects velocity in the range 0-100, most modern controllers give messages in the range 0-127. While this leads to some cool and whacky sounds, it's not always desirable. Check this checkbox to scale the velocity.
 
+## Uploading a user bank
+Click the black bank name display in the upper area of the central section to bring up a list of all banks. You'll see an "Upload" button at the bottom of the list.
+
+![DX7Panel bank settings](/screenshots/bank_view.jpg?raw=true "DX7Panel Bank Settings")
+
+
 ## Changing the default backend connection settings
 By default, the fontend expects the backend to be available on the same address. If the frontend is running on a different host, you'll need to specify the IP address of the backend host.
 - Click the colored circle ("Connection LED") in the top left of the page. Enter a new address in the form "\<ipaddress\>:\<port\>" and hit the return key to apply.
 
 ![DX7Panel connection settings](/screenshots/connection_settings.jpg?raw=true "DX7Panel Connection Settings")
-
 
